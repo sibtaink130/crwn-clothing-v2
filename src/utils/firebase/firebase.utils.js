@@ -1,12 +1,8 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp } from "firebase/app";
 
-import {
-  getAuth,
-  signInWithPopup,
-  GoogleAuthProvider,
-} from "firebase/auth";
+import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBuRGUlYT1euzhWsE83d1vKLL-27FuXn50",
@@ -22,62 +18,49 @@ const firebaseApp = initializeApp(firebaseConfig);
 const provider = new GoogleAuthProvider();
 
 provider.setCustomParameters({
-  prompt: 'select_account',
+  prompt: "select_account",
 });
 
 const db = getFirestore();
 
-export const createUserProfileDocument = async (userAuth, additionalData) => {
-  const userDocRef = doc(db, userAuth, user.id);
-
-  const userSnapshot = getDoc(userDocRef);
-  console.log(userSnapshot;
-};
-
-
 const auth = getAuth();
-export const signInWithGooglePopup = () => signInWithPopup(auth, provider)
-  .then((result) => {
-    // This gives you a Google Access Token. You can use it to access the Google API.
-    const credential = GoogleAuthProvider.credentialFromResult(result);
-    const token = credential.accessToken;
-    // The signed-in user info.
-    const user = result.user;
-    return user; // ...
-  })
-  .catch((error) => {
-    // Handle Errors here.
-    const errorCode = error.code;
-    const errorMessage = error.message;
-    // The email of the user's account used.
-    const email = error.customData.email;
-    // The AuthCredential type that was used.
-    const credential = GoogleAuthProvider.credentialFromError(error);
-    // ...
-  });
-/*
-export const signIn2 = signInWithRedirect(auth, provider);
+export const signInWithGooglePopup = () =>
+signInWithPopup(auth, provider)
+.then((result) => {
+  // This gives you a Google Access Token. You can use it to access the Google API.
+  //const credential = GoogleAuthProvider.credentialFromResult(result);
+  // const token = credential.accessToken;
+  // The signed-in user info.
+  const user = result.user;
+  return user; // ...
+})
+.catch((error) => {
+  // Handle Errors here.
+  console.log("Error creating user: ", error.message);
+  
+  // ...
+});
 
-export const getRedirectResult = getRedirectResult(auth)
-  .then((result) => {
-    // This gives you a Google Access Token. You can use it to access Google APIs.
-    const credential = GoogleAuthProvider.credentialFromResult(result);
-    const token = credential.accessToken;
+export const createUserDocumentFromAuth = async (userAuth) => {
+  console.log(userAuth);
+  const userDocRef = doc(db, "users", userAuth.uid);
 
-    // The signed-in user info.
-    const user = result.user;
-    return user;
-    // IdP data available using getAdditionalUserInfo(result)
-    // ...
-  })
-  .catch((error) => {
-    // Handle Errors here.
-    const errorCode = error.code;
-    const errorMessage = error.message;
-    // The email of the user's account used.
-    const email = error.customData.email;
-    // The AuthCredential type that was used.
-    const credential = GoogleAuthProvider.credentialFromError(error);
-    // ...
-  });
-*/
+  const userSnapshot = await getDoc(userDocRef);
+  const createdAt = new Date();
+
+  if (!userSnapshot.exists()) {
+    const { displayName, email } = userAuth;
+
+    try {
+      await setDoc(userDocRef, {
+        displayName,
+        email,
+        createdAt,
+      });
+    } catch (error) {
+      console.log("Error creating user: ", error.message);
+    }
+  }
+
+  return userDocRef;
+};
